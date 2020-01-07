@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>4.4</version>
+    <date>2020-01-07T07:19:48Z</date>
+    <groups>
+        <group>
+            <name>Templates</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Template Module ICMP ping from windows agent</template>
+            <name>Template Module ICMP ping from windows agent</name>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>ICMP ping</name>
+                </application>
+                <application>
+                    <name>Zabbix raw item</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>get icmp ping list</name>
+                    <type>CALCULATED</type>
+                    <key>get.icmp.ping.list</key>
+                    <delay>1d</delay>
+                    <history>0</history>
+                    <trends>0</trends>
+                    <params>0</params>
+                    <description>Dummy item for addresses LLD from {$PING_LIST} user macro</description>
+                    <applications>
+                        <application>
+                            <name>Zabbix raw item</name>
+                        </application>
+                    </applications>
+                </item>
+            </items>
+            <discovery_rules>
+                <discovery_rule>
+                    <name>ICMP ping discovery</name>
+                    <type>DEPENDENT</type>
+                    <key>icmpping.discovery</key>
+                    <delay>0</delay>
+                    <lifetime>0</lifetime>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>ping status {#ADDR}</name>
+                            <type>DEPENDENT</type>
+                            <key>ping.status[{#ADDR}]</key>
+                            <delay>0</delay>
+                            <applications>
+                                <application>
+                                    <name>ICMP ping</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Service state</name>
+                            </valuemap>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$..StatusCode.first()</params>
+                                    <error_handler>CUSTOM_VALUE</error_handler>
+                                    <error_handler_params>1</error_handler_params>
+                                </step>
+                                <step>
+                                    <type>JAVASCRIPT</type>
+                                    <params>if (value == 0) {return(1)} else {return(0)}
+</params>
+                                </step>
+                            </preprocessing>
+                            <master_item>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                            </master_item>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>resolution status {#ADDR}</name>
+                            <type>DEPENDENT</type>
+                            <key>resolution.status[{#ADDR}]</key>
+                            <delay>0</delay>
+                            <applications>
+                                <application>
+                                    <name>ICMP ping</name>
+                                </application>
+                            </applications>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$..PrimaryAddressResolutionStatus.first()</params>
+                                </step>
+                                <step>
+                                    <type>JAVASCRIPT</type>
+                                    <params>if (value == 0) {return(1)} else {return(0)}
+</params>
+                                </step>
+                            </preprocessing>
+                            <master_item>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                            </master_item>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>response time {#ADDR}</name>
+                            <type>DEPENDENT</type>
+                            <key>response.time[{#ADDR}]</key>
+                            <delay>0</delay>
+                            <value_type>FLOAT</value_type>
+                            <units>s</units>
+                            <applications>
+                                <application>
+                                    <name>ICMP ping</name>
+                                </application>
+                            </applications>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$..ResponseTime.first()</params>
+                                    <error_handler>DISCARD_VALUE</error_handler>
+                                </step>
+                                <step>
+                                    <type>MULTIPLIER</type>
+                                    <params>0.001</params>
+                                </step>
+                            </preprocessing>
+                            <master_item>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                            </master_item>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>get icmp ping {#ADDR}</name>
+                            <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                            <history>0</history>
+                            <trends>0</trends>
+                            <value_type>TEXT</value_type>
+                            <applications>
+                                <application>
+                                    <name>Zabbix raw item</name>
+                                </application>
+                            </applications>
+                        </item_prototype>
+                    </item_prototypes>
+                    <master_item>
+                        <key>get.icmp.ping.list</key>
+                    </master_item>
+                    <preprocessing>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return '{$PING_LIST}'.replace(/([^,]+)/g,'{&quot;{#ADDR}&quot;:&quot;$1&quot;}').replace(/(.*)/,'[$1]')
+</params>
+                        </step>
+                    </preprocessing>
+                </discovery_rule>
+            </discovery_rules>
+            <macros>
+                <macro>
+                    <macro>{$PING_LIST}</macro>
+                    <value>8.8.8.8,www.ya.ru,10.10.10.10</value>
+                    <description>host user macro sample</description>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+    <value_maps>
+        <value_map>
+            <name>Service state</name>
+            <mappings>
+                <mapping>
+                    <value>0</value>
+                    <newvalue>Down</newvalue>
+                </mapping>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>Up</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+    </value_maps>
+</zabbix_export>
