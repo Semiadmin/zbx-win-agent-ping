@@ -12,7 +12,7 @@
             <template>Template Module ICMP ping from the Zabbix Windows agent</template>
             <name>Template Module ICMP ping from the Zabbix Windows agent</name>
             <description>Oleg Kostikov&#13;
-Module for ICMP ping test from the Zabbix Windows agent. &#13;
+Module for ICMP ping test from the Zabbix Windows agent v4.4. &#13;
 Put the comma-separated target list in user macro {$PING_LIST} at the template or host level and run the &quot;get ICMP ping list&quot; item.&#13;
 List example:&#13;
 8.8.8.8,www.ya.ru,10.10.10.10</description>
