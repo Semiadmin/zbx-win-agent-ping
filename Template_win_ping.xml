@@ -11,7 +11,7 @@
         <template>
             <template>Template Module ICMP ping from the Zabbix Windows agent</template>
             <name>Template Module ICMP ping from the Zabbix Windows agent</name>
-            <description>Oleg Kostikov aka Semiadmin&#13;
+            <description>Oleg Kostikov&#13;
 Module for ICMP ping test from the Zabbix Windows agent. &#13;
 Put the comma-separated target list in user macro {$PING_LIST} at the template or host level and run the &quot;get ICMP ping list&quot; item.&#13;
 List example:&#13;
