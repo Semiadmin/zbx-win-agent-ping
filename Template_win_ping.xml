@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2020-01-15T16:49:09Z</date>
+    <date>2020-01-21T08:13:33Z</date>
     <groups>
         <group>
             <name>Templates/Modules</name>
@@ -11,8 +11,8 @@
         <template>
             <template>Template Module ICMP ping from the Zabbix Windows agent</template>
             <name>Template Module ICMP ping from the Zabbix Windows agent</name>
-            <description>Oleg Kostikov&#13;
-Module for ICMP ping test from the Zabbix Windows agent v4.4. &#13;
+            <description>Oleg Kostikov aka Semiadmin&#13;
+Module for ICMP ping test from the Zabbix Windows agent. &#13;
 Put the comma-separated target list in user macro {$PING_LIST} at the template or host level and run the &quot;get ICMP ping list&quot; item.&#13;
 List example:&#13;
 8.8.8.8,www.ya.ru,10.10.10.10</description>
@@ -32,12 +32,11 @@ List example:&#13;
             <items>
                 <item>
                     <name>get ICMP ping list</name>
-                    <type>CALCULATED</type>
-                    <key>get.icmp.ping.list</key>
+                    <type>SIMPLE</type>
+                    <key>icmpping[localhost]</key>
                     <delay>1d</delay>
                     <history>0</history>
                     <trends>0</trends>
-                    <params>0</params>
                     <description>Dummy item for addresses LLD from {$PING_LIST} user macro</description>
                     <applications>
                         <application>
@@ -150,7 +149,7 @@ List example:&#13;
                         </item_prototype>
                     </item_prototypes>
                     <master_item>
-                        <key>get.icmp.ping.list</key>
+                        <key>icmpping[localhost]</key>
                     </master_item>
                     <preprocessing>
                         <step>
