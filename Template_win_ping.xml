@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2020-01-21T08:13:33Z</date>
+    <date>2020-07-07T12:27:58Z</date>
     <groups>
         <group>
             <name>Templates/Modules</name>
@@ -54,6 +54,34 @@ List example:&#13;
                     <lifetime>0</lifetime>
                     <item_prototypes>
                         <item_prototype>
+                            <name>ping last error {#ADDR}</name>
+                            <type>DEPENDENT</type>
+                            <key>ping.error[{#ADDR}]</key>
+                            <delay>0</delay>
+                            <applications>
+                                <application>
+                                    <name>ICMP ping</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Windows - Ping WMI</name>
+                            </valuemap>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$..StatusCode.first()</params>
+                                    <error_handler>DISCARD_VALUE</error_handler>
+                                </step>
+                                <step>
+                                    <type>JAVASCRIPT</type>
+                                    <params>if (value == 0) {return(null)} else {return(value)}</params>
+                                </step>
+                            </preprocessing>
+                            <master_item>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout={$PING_TIMEOUT}&quot;]</key>
+                            </master_item>
+                        </item_prototype>
+                        <item_prototype>
                             <name>ping status {#ADDR}</name>
                             <type>DEPENDENT</type>
                             <key>ping.status[{#ADDR}]</key>
@@ -80,7 +108,7 @@ List example:&#13;
                                 </step>
                             </preprocessing>
                             <master_item>
-                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout={$PING_TIMEOUT}&quot;]</key>
                             </master_item>
                         </item_prototype>
                         <item_prototype>
@@ -105,8 +133,15 @@ List example:&#13;
                                 </step>
                             </preprocessing>
                             <master_item>
-                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout={$PING_TIMEOUT}&quot;]</key>
                             </master_item>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}=0</expression>
+                                    <name>[{#ADDR}] Unsuccessful address resolution</name>
+                                    <priority>HIGH</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
                             <name>response time {#ADDR}</name>
@@ -132,12 +167,12 @@ List example:&#13;
                                 </step>
                             </preprocessing>
                             <master_item>
-                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                                <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout={$PING_TIMEOUT}&quot;]</key>
                             </master_item>
                         </item_prototype>
                         <item_prototype>
                             <name>get icmp ping {#ADDR}</name>
-                            <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout=2000&quot;]</key>
+                            <key>wmi.getall[root\cimv2,&quot;SELECT PrimaryAddressResolutionStatus, StatusCode, ResponseTime FROM Win32_PingStatus WHERE Address='{#ADDR}' AND Timeout={$PING_TIMEOUT}&quot;]</key>
                             <history>0</history>
                             <trends>0</trends>
                             <value_type>TEXT</value_type>
@@ -148,6 +183,18 @@ List example:&#13;
                             </applications>
                         </item_prototype>
                     </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Template Module ICMP ping from the Zabbix Windows agent:response.time[{#ADDR}].avg(#3)}&gt;={$PING_TIMEOUT}/1.5 and {Template Module ICMP ping from the Zabbix Windows agent:ping.status[{#ADDR}].last()}=1 and {Template Module ICMP ping from the Zabbix Windows agent:resolution.status[{#ADDR}].last()}=1</expression>
+                            <name>[{#ADDR}] High ping value</name>
+                            <priority>WARNING</priority>
+                        </trigger_prototype>
+                        <trigger_prototype>
+                            <expression>{Template Module ICMP ping from the Zabbix Windows agent:ping.status[{#ADDR}].count(#3,0)}&gt;=3 and {Template Module ICMP ping from the Zabbix Windows agent:resolution.status[{#ADDR}].last()}=1</expression>
+                            <name>[{#ADDR}] Host unavailable by ping</name>
+                            <priority>HIGH</priority>
+                        </trigger_prototype>
+                    </trigger_prototypes>
                     <master_item>
                         <key>icmpping[localhost]</key>
                     </master_item>
@@ -164,6 +211,11 @@ List example:&#13;
                 <macro>
                     <macro>{$PING_LIST}</macro>
                 </macro>
+                <macro>
+                    <macro>{$PING_TIMEOUT}</macro>
+                    <value>2000</value>
+                    <description>in milliseconds</description>
+                </macro>
             </macros>
         </template>
     </templates>
@@ -178,6 +230,95 @@ List example:&#13;
                 <mapping>
                     <value>1</value>
                     <newvalue>Up</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+        <value_map>
+            <name>Windows - Ping WMI</name>
+            <mappings>
+                <mapping>
+                    <value>0</value>
+                    <newvalue>Success</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11001</value>
+                    <newvalue>Buffer Too Small</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11002</value>
+                    <newvalue>Destination Net Unreachable</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11003</value>
+                    <newvalue>Destination Host Unreachable</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11004</value>
+                    <newvalue>Destination Protocol Unreachable</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11005</value>
+                    <newvalue>Destination Port Unreachable</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11006</value>
+                    <newvalue>No Resources</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11007</value>
+                    <newvalue>Bad Option</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11008</value>
+                    <newvalue>Hardware Error</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11009</value>
+                    <newvalue>Packet Too Big</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11010</value>
+                    <newvalue>Request Timed Out</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11011</value>
+                    <newvalue>Bad Request</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11012</value>
+                    <newvalue>Bad Route</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11013</value>
+                    <newvalue>TimeToLive Expired Transit</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11014</value>
+                    <newvalue>TimeToLive Expired Reassembly</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11015</value>
+                    <newvalue>Parameter Problem</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11016</value>
+                    <newvalue>Source Quench</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11017</value>
+                    <newvalue>Option Too Big</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11018</value>
+                    <newvalue>Bad Destination</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11032</value>
+                    <newvalue>Negotiating IPSEC</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11050</value>
+                    <newvalue>General Failure</newvalue>
                 </mapping>
             </mappings>
         </value_map>
